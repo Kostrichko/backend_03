@@ -1,0 +1,5 @@
+Django==5.2.1
+celery[redis]==5.4.0
+redis==5.0.8
+requests==2.31.0
+psycopg2-binary==2.9.10
