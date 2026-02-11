@@ -3,6 +3,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils.dateparse import parse_datetime
+from django_ratelimit.decorators import ratelimit
 import json
 from .models import User, Task, Tag
 from . import tasks
@@ -38,6 +39,7 @@ def get_user(telegram_id):
 
 
 @csrf_exempt
+@ratelimit(key='ip', rate='10/m', method='POST')
 @json_response
 def register(request):
     data = json.loads(request.body)
@@ -49,6 +51,7 @@ def register(request):
 
 
 @csrf_exempt
+@ratelimit(key='ip', rate='30/m', method='GET')
 @json_response
 def get_tasks(request):
     user = get_user(request.GET['telegram_id'])
@@ -69,6 +72,7 @@ def get_tasks(request):
 
 
 @csrf_exempt
+@ratelimit(key='ip', rate='10/m', method='POST')
 @json_response
 @transaction.atomic
 def create_task(request):
@@ -104,6 +108,7 @@ def create_task(request):
 
 
 @csrf_exempt
+@ratelimit(key='ip', rate='30/m', method='GET')
 @json_response
 def get_tags(request):
     user = get_user(request.GET['telegram_id'])
@@ -114,6 +119,7 @@ def get_tags(request):
 
 
 @csrf_exempt
+@ratelimit(key='ip', rate='10/m', method='POST')
 @json_response
 @transaction.atomic
 def create_tag(request):
@@ -135,6 +141,7 @@ def create_tag(request):
 
 
 @csrf_exempt
+@ratelimit(key='ip', rate='20/m', method='GET')
 @json_response
 def get_archive(request):
     user = get_user(request.GET['telegram_id'])
@@ -167,6 +174,7 @@ def complete_task(request):
 
 
 @csrf_exempt
+@ratelimit(key='ip', rate='10/m', method='POST')
 @json_response
 @transaction.atomic
 def delete_task(request):
@@ -179,6 +187,7 @@ def delete_task(request):
 
 
 @csrf_exempt
+@ratelimit(key='ip', rate='10/m', method='POST')
 @json_response
 @transaction.atomic
 def delete_tag(request):
@@ -191,6 +200,7 @@ def delete_tag(request):
 
 
 @csrf_exempt
+@ratelimit(key='ip', rate='5/m', method='POST')
 @json_response
 @transaction.atomic
 def clear_all(request):

@@ -8,6 +8,7 @@ import aiohttp
 import os
 
 API_URL = os.getenv('API_URL', 'http://web:8000/api')
+API_KEY = os.getenv('API_KEY', '12345')
 
 
 class CreateTaskState(StatesGroup):
@@ -22,6 +23,9 @@ class CreateTagState(StatesGroup):
 
 async def api_request(method, endpoint, **kwargs):
     url = f"{API_URL}{endpoint}"
+    headers = kwargs.get('headers', {})
+    headers['X-API-Key'] = API_KEY
+    kwargs['headers'] = headers
     try:
         async with aiohttp.ClientSession() as session:
             async with session.request(method, url, **kwargs) as response:

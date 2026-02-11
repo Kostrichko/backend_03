@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'api',
+    'django_ratelimit',
 ]
 
 MIDDLEWARE = [
@@ -49,6 +50,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'api.middleware.APIKeyMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -135,4 +137,7 @@ CELERY_TIMEZONE = TIME_ZONE
 # Bot token
 import os
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
+
+# API key for authentication
+API_KEY = os.environ.get('API_KEY', '12345')
 
