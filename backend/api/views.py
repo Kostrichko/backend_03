@@ -4,8 +4,15 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils.dateparse import parse_datetime
 from django_ratelimit.decorators import ratelimit
+from rest_framework.exceptions import ValidationError as DRFValidationError
 import json
 from .models import User, Task, Tag
+from .services import UserService, TaskService, TagService
+from .serializers import (
+    UserSerializer, TaskSerializer, TagSerializer,
+    TaskCreateSerializer, TagCreateSerializer, RegisterSerializer,
+    TaskActionSerializer, TagActionSerializer, ClearAllSerializer
+)
 from . import tasks
 
 
@@ -16,14 +23,16 @@ def json_response(func):
             return func(request, *args, **kwargs)
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except (ValidationError, DRFValidationError) as e:
+            return JsonResponse({'error': str(e)}, status=400)
+        except ValueError as e:
+            return JsonResponse({'error': str(e)}, status=400)
         except User.DoesNotExist:
             return JsonResponse({'error': 'User not found'}, status=404)
         except Task.DoesNotExist:
             return JsonResponse({'error': 'Task not found'}, status=404)
         except Tag.DoesNotExist:
             return JsonResponse({'error': 'Tag not found'}, status=404)
-        except ValidationError as e:
-            return JsonResponse({'error': str(e)}, status=400)
         except Exception as e:
             return JsonResponse({'error': 'Server error'}, status=500)
     return wrapper
@@ -31,23 +40,23 @@ def json_response(func):
 
 def get_user(telegram_id):
     """Get or create user by telegram_id"""
-    user, _ = User.objects.get_or_create(
-        telegram_id=int(telegram_id),
-        defaults={'username': ''}
-    )
-    return user
+    return UserService.get_or_create_user(int(telegram_id))
 
 
 @csrf_exempt
 @ratelimit(key='ip', rate='10/m', method='POST')
 @json_response
 def register(request):
-    data = json.loads(request.body)
-    user = get_user(data['telegram_id'])
-    if data.get('username'):
-        user.username = data['username']
+    serializer = RegisterSerializer(data=json.loads(request.body))
+    serializer.is_valid(raise_exception=True)
+
+    user = get_user(serializer.validated_data['telegram_id'])
+    if serializer.validated_data.get('username'):
+        user.username = serializer.validated_data['username']
         user.save()
-    return JsonResponse({'telegram_id': user.telegram_id})
+
+    user_serializer = UserSerializer(user)
+    return JsonResponse(user_serializer.data)
 
 
 @csrf_exempt
@@ -55,20 +64,10 @@ def register(request):
 @json_response
 def get_tasks(request):
     user = get_user(request.GET['telegram_id'])
-    tasks = Task.objects.filter(
-        user=user,
-        status='pending'
-    ).prefetch_related('tags').order_by('due_date', '-created_at')
-    
-    return JsonResponse({
-        'tasks': [{
-            'id': t.id,
-            'title': t.title,
-            'tags': [tag.name for tag in t.tags.all()],
-            'created_at': t.created_at.strftime('%Y-%m-%d %H:%M'),
-            'due_date': t.due_date.strftime('%Y-%m-%d %H:%M:%S') if t.due_date else None
-        } for t in tasks]
-    })
+    tasks = TaskService.get_pending_tasks_for_user(user)
+
+    serializer = TaskSerializer(tasks, many=True)
+    return JsonResponse(serializer.data, safe=False)
 
 
 @csrf_exempt
@@ -76,35 +75,26 @@ def get_tasks(request):
 @json_response
 @transaction.atomic
 def create_task(request):
-    data = json.loads(request.body)
-    user = get_user(data['telegram_id'])
-    
-    if Task.objects.filter(user=user, status='pending').count() >= 6:
-        return JsonResponse({'error': 'Лимит задач: 6'}, status=400)
-    
-    if not data.get('title', '').strip():
-        return JsonResponse({'error': 'Title is required'}, status=400)
-    
-    due_date_str = data.get('due_date')
-    due_date = parse_datetime(due_date_str) if due_date_str else None
-    
-    task = Task.objects.create(
+    serializer = TaskCreateSerializer(data=json.loads(request.body))
+    serializer.is_valid(raise_exception=True)
+
+    user = get_user(serializer.validated_data['telegram_id'])
+
+    task = TaskService.create_task(
         user=user,
-        title=data['title'].strip(),
-        due_date=due_date
+        title=serializer.validated_data['title'],
+        due_date_str=serializer.validated_data.get('due_date'),
+        tag_names=serializer.validated_data.get('tags', [])
     )
-    
-    if tag_names := data.get('tags', []):
-        tags = Tag.objects.filter(user=user, name__in=tag_names)
-        task.tags.set(tags)
-    
-    if due_date:
+
+    if task.due_date:
         tasks.send_task_notification.apply_async(
             args=[task.id],
-            eta=due_date
+            eta=task.due_date
         )
-    
-    return JsonResponse({'id': task.id, 'title': task.title})
+
+    task_serializer = TaskSerializer(task)
+    return JsonResponse(task_serializer.data)
 
 
 @csrf_exempt
@@ -112,10 +102,9 @@ def create_task(request):
 @json_response
 def get_tags(request):
     user = get_user(request.GET['telegram_id'])
-    tags = Tag.objects.filter(user=user).order_by('name')
-    return JsonResponse({
-        'tags': [{'id': t.id, 'name': t.name} for t in tags]
-    })
+    tags = TagService.get_tags_for_user(user)
+    serializer = TagSerializer(tags, many=True)
+    return JsonResponse(serializer.data, safe=False)
 
 
 @csrf_exempt
@@ -123,21 +112,14 @@ def get_tags(request):
 @json_response
 @transaction.atomic
 def create_tag(request):
-    data = json.loads(request.body)
-    user = get_user(data['telegram_id'])
-    
-    if Tag.objects.filter(user=user).count() >= 4:
-        return JsonResponse({'error': 'Лимит тегов: 4'}, status=400)
-    
-    name = data.get('name', '').strip()
-    if not name:
-        return JsonResponse({'error': 'Name is required'}, status=400)
-    
-    if Tag.objects.filter(user=user, name=name).exists():
-        return JsonResponse({'error': 'Tag already exists'}, status=400)
-    
-    tag = Tag.objects.create(user=user, name=name)
-    return JsonResponse({'id': tag.id, 'name': tag.name})
+    serializer = TagCreateSerializer(data=json.loads(request.body))
+    serializer.is_valid(raise_exception=True)
+
+    user = get_user(serializer.validated_data['telegram_id'])
+    tag = TagService.create_tag(user=user, name=serializer.validated_data['name'])
+
+    tag_serializer = TagSerializer(tag)
+    return JsonResponse(tag_serializer.data)
 
 
 @csrf_exempt
@@ -145,31 +127,22 @@ def create_tag(request):
 @json_response
 def get_archive(request):
     user = get_user(request.GET['telegram_id'])
-    tasks = Task.objects.filter(
-        user=user,
-        status__in=['completed', 'deleted']
-    ).prefetch_related('tags').order_by('-created_at')[:5]
-    
-    return JsonResponse({
-        'tasks': [{
-            'id': t.id,
-            'title': t.title,
-            'tags': [tag.name for tag in t.tags.all()],
-            'created_at': t.created_at.strftime('%Y-%m-%d %H:%M'),
-            'status': t.status
-        } for t in tasks]
-    })
+    tasks = TaskService.get_archive_tasks_for_user(user)
+
+    serializer = TaskSerializer(tasks, many=True)
+    return JsonResponse(serializer.data, safe=False)
 
 
 @csrf_exempt
+@ratelimit(key='ip', rate='10/m', method='POST')
 @json_response
 @transaction.atomic
 def complete_task(request):
-    data = json.loads(request.body)
-    user = get_user(data['telegram_id'])
-    task = Task.objects.get(id=data['task_id'], user=user)
-    task.status = 'completed'
-    task.save(update_fields=['status'])
+    serializer = TaskActionSerializer(data=json.loads(request.body))
+    serializer.is_valid(raise_exception=True)
+
+    user = get_user(serializer.validated_data['telegram_id'])
+    TaskService.complete_task(user=user, task_id=serializer.validated_data['task_id'])
     return JsonResponse({'status': 'ok'})
 
 
@@ -178,11 +151,11 @@ def complete_task(request):
 @json_response
 @transaction.atomic
 def delete_task(request):
-    data = json.loads(request.body)
-    user = get_user(data['telegram_id'])
-    task = Task.objects.get(id=data['task_id'], user=user)
-    task.status = 'deleted'
-    task.save(update_fields=['status'])
+    serializer = TaskActionSerializer(data=json.loads(request.body))
+    serializer.is_valid(raise_exception=True)
+
+    user = get_user(serializer.validated_data['telegram_id'])
+    TaskService.delete_task(user=user, task_id=serializer.validated_data['task_id'])
     return JsonResponse({'status': 'ok'})
 
 
@@ -191,11 +164,11 @@ def delete_task(request):
 @json_response
 @transaction.atomic
 def delete_tag(request):
-    data = json.loads(request.body)
-    user = get_user(data['telegram_id'])
-    deleted = Tag.objects.filter(id=data['tag_id'], user=user).delete()
-    if deleted[0] == 0:
-        raise Tag.DoesNotExist
+    serializer = TagActionSerializer(data=json.loads(request.body))
+    serializer.is_valid(raise_exception=True)
+
+    user = get_user(serializer.validated_data['telegram_id'])
+    TagService.delete_tag(user=user, tag_id=serializer.validated_data['tag_id'])
     return JsonResponse({'status': 'ok'})
 
 
@@ -204,10 +177,11 @@ def delete_tag(request):
 @json_response
 @transaction.atomic
 def clear_all(request):
-    data = json.loads(request.body)
-    user = get_user(data['telegram_id'])
-    Task.objects.filter(user=user).delete()
-    Tag.objects.filter(user=user).delete()
+    serializer = ClearAllSerializer(data=json.loads(request.body))
+    serializer.is_valid(raise_exception=True)
+
+    user = get_user(serializer.validated_data['telegram_id'])
+    TaskService.clear_all_tasks_and_tags(user=user)
     return JsonResponse({'status': 'ok'})
 
 
