@@ -5,7 +5,6 @@ API endpoint integration tests.
 import json
 
 from django.test import Client, TestCase
-from django.urls import reverse
 
 from api.models import Tag, Task, User
 
@@ -153,8 +152,8 @@ class TaskViewTest(APITestMixin, TestCase):
 
     def test_get_archive(self):
         """Test getting archive tasks."""
-        task1 = Task.objects.create(user=self.user, title="Task 1", status="completed")
-        task2 = Task.objects.create(user=self.user, title="Task 2", status="deleted")
+        Task.objects.create(user=self.user, title="Task 1", status="completed")
+        Task.objects.create(user=self.user, title="Task 2", status="deleted")
         Task.objects.create(user=self.user, title="Task 3", status="pending")
 
         response = self.get_json("/api/archive/", {"telegram_id": self.user.telegram_id})

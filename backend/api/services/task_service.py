@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.db import transaction
 from django.utils.dateparse import parse_datetime
 
 from ..models import Tag, Task, User
@@ -16,14 +15,11 @@ class TaskService:
         return (
             Task.objects.filter(user=user, status__in=["completed", "deleted"])
             .prefetch_related("tags")
-            .order_by("-created_at")[: settings.MAX_ARCHIVE_TASKS_PER_USER])
+            .order_by("-created_at")[: settings.MAX_ARCHIVE_TASKS_PER_USER]
+        )
 
     @staticmethod
-    def create_task(
-        user: User,
-        title: str,
-        due_date_str=None,
-        tag_names: list[str] | None = None) -> Task:
+    def create_task(user: User, title: str, due_date_str=None, tag_names: list[str] | None = None) -> Task:
         from datetime import datetime as dt
 
         if Task.objects.filter(user=user, status="pending").count() >= settings.MAX_PENDING_TASKS_PER_USER:

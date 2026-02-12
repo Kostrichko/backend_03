@@ -14,7 +14,8 @@ from api.serializers import (
     TaskActionSerializer,
     TaskCreateSerializer,
     TaskSerializer,
-    UserSerializer,)
+    UserSerializer,
+)
 
 
 class UserSerializerTest(TestCase):
@@ -119,11 +120,8 @@ class TaskCreateSerializerTest(TestCase):
 
     def test_task_create_serializer_with_tags(self):
         """Test TaskCreateSerializer with tags."""
-        data = {
-            "telegram_id": 123456789,
-            "title": "Test task",
-            "tags": ["work", "urgent"]}
-        
+        data = {"telegram_id": 123456789, "title": "Test task", "tags": ["work", "urgent"]}
+
         serializer = TaskCreateSerializer(data=data)
 
         self.assertTrue(serializer.is_valid())

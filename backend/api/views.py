@@ -3,7 +3,6 @@ import json
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.http import JsonResponse
-from django.utils.dateparse import parse_datetime
 from django.views.decorators.csrf import csrf_exempt
 
 from django_ratelimit.decorators import ratelimit
@@ -20,7 +19,8 @@ from .serializers import (
     TaskActionSerializer,
     TaskCreateSerializer,
     TaskSerializer,
-    UserSerializer)
+    UserSerializer,
+)
 from .services import TagService, TaskService, UserService
 
 
@@ -97,7 +97,8 @@ def create_task(request):
         user=user,
         title=serializer.validated_data["title"],
         due_date_str=serializer.validated_data.get("due_date"),
-        tag_names=serializer.validated_data.get("tags", []))
+        tag_names=serializer.validated_data.get("tags", []),
+    )
 
     if task.due_date:
         tasks.send_task_notification.apply_async(args=[task.id], eta=task.due_date)

@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.utils import timezone
 
 import requests
 from celery import shared_task
