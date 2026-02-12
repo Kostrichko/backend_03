@@ -62,9 +62,13 @@ jobs:
         pip install -r backend/requirements-dev.txt
         pip install flake8 black isort mypy django-stubs djangorestframework-stubs types-requests
     - name: Run Black
-      run: black --check . --exclude="migrations|venv|env|.venv"
+      run: |
+        black --check backend/ --exclude="migrations|venv|env|.venv"
+        black --check bot/ --exclude="venv|env|.venv"
     - name: Run isort
-      run: isort --profile black --check-only . --skip migrations --skip venv --skip env --skip .venv
+      run: |
+        isort --profile black --check-only backend/ --skip migrations --skip venv --skip env --skip .venv
+        isort --profile black --check-only bot/ --skip venv --skip env --skip .venv
     - name: Run flake8
       run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
     - name: Run mypy (Backend)
