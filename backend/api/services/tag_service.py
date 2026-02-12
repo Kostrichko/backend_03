@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import transaction
 
 from ..models import Tag, User
@@ -12,8 +13,8 @@ class TagService:
     @staticmethod
     def create_tag(user: User, name: str) -> Tag:
         """Create a new tag for user"""
-        if Tag.objects.filter(user=user).count() >= 4:
-            raise ValueError("Лимит тегов: 4")
+        if Tag.objects.filter(user=user).count() >= settings.MAX_TAGS_PER_USER:
+            raise ValueError(f"Лимит тегов: {settings.MAX_TAGS_PER_USER}")
 
         name = name.strip()
         if not name:

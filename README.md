@@ -41,12 +41,19 @@ docker exec django_aiogram-web-1 python manage.py migrate
 
 ### 2. Лимиты на задачи и теги
 
-**Решение:** Ограничение в 6 активных задач и 4 тега на пользователя.
+**Решение:** Ограничение в 6 активных задач и 4 тега на пользователя (настраивается в settings).
 
 **Обоснование:**
 - Фокус на важных задачах (принцип ограниченного списка дел)
 - Предотвращение злоупотреблений и перегрузки системы
 - Упрощение UI бота (все задачи/теги влезают в одно сообщение)
+
+**Настройка лимитов:**
+```python
+# config/settings.py
+MAX_TAGS_PER_USER = 4
+MAX_PENDING_TASKS_PER_USER = 6
+```
 
 ### 3. Клавиатурный интерфейс
 
@@ -67,6 +74,53 @@ docker exec django_aiogram-web-1 python manage.py migrate
 - Валидация на каждом шаге
 - Возможность отмены операции
 - Хранение промежуточных данных в state
+
+## Конфигурация
+
+### Основные настройки
+
+Проект использует Django settings для конфигурации. Основные параметры:
+
+```python
+# config/settings.py
+
+# Лимиты пользователей
+MAX_TAGS_PER_USER = 4                    # Максимум тегов на пользователя
+MAX_PENDING_TASKS_PER_USER = 6           # Максимум активных задач
+
+# API ключи
+API_KEY = os.environ.get("API_KEY", "12345")  # Ключ для API аутентификации
+BOT_TOKEN = os.environ.get("BOT_TOKEN")       # Токен Telegram бота
+
+# База данных (PostgreSQL в продакшене)
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('POSTGRES_DB'),
+        'USER': os.environ.get('POSTGRES_USER'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
+        'HOST': 'postgres',
+        'PORT': '5432',
+    }
+}
+
+# Celery (Redis для очередей)
+CELERY_BROKER_URL = "redis://redis:6379/0"
+CELERY_RESULT_BACKEND = "redis://redis:6379/0"
+```
+
+### Переменные окружения
+
+Создайте `.env` файл в корне проекта:
+
+```bash
+# .env
+BOT_TOKEN=ваш_токен_telegram_бота
+POSTGRES_DB=django_aiogram
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+API_KEY=ваш_секретный_ключ
+```
 
 ## Трудности и их решение
 

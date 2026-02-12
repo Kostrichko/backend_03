@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import transaction
 from django.utils.dateparse import parse_datetime
 
@@ -22,8 +23,8 @@ class TaskService:
     @staticmethod
     def create_task(user: User, title: str, due_date_str: str = None, tag_names: list = None) -> Task:
         """Create a new task for user"""
-        if Task.objects.filter(user=user, status="pending").count() >= 6:
-            raise ValueError("Лимит задач: 6")
+        if Task.objects.filter(user=user, status="pending").count() >= settings.MAX_PENDING_TASKS_PER_USER:
+            raise ValueError(f"Лимит задач: {settings.MAX_PENDING_TASKS_PER_USER}")
 
         # Validation moved to serializer
         due_date = parse_datetime(due_date_str) if due_date_str else None

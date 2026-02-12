@@ -142,3 +142,7 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
 # API key for authentication
 API_KEY = os.environ.get("API_KEY", "12345")
+
+# User limits
+MAX_TAGS_PER_USER = 4
+MAX_PENDING_TASKS_PER_USER = 6
