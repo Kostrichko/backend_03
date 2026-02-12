@@ -17,7 +17,7 @@ class TaskService:
         return (
             Task.objects.filter(user=user, status__in=["completed", "deleted"])
             .prefetch_related("tags")
-            .order_by("-created_at")[:5]
+            .order_by("-created_at")[:settings.MAX_ARCHIVE_TASKS_PER_USER]
         )
 
     @staticmethod

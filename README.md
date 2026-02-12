@@ -87,6 +87,7 @@ MAX_PENDING_TASKS_PER_USER = 6
 # Лимиты пользователей
 MAX_TAGS_PER_USER = 4                    # Максимум тегов на пользователя
 MAX_PENDING_TASKS_PER_USER = 6           # Максимум активных задач
+MAX_ARCHIVE_TASKS_PER_USER = 5           # Максимум архивных задач в списке
 
 # API ключи
 API_KEY = os.environ.get("API_KEY", "12345")  # Ключ для API аутентификации
