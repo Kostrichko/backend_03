@@ -2,8 +2,7 @@ import asyncio
 from aiogram import Bot, Dispatcher
 import os
 from handlers import register_handlers
-
-BOT_TOKEN = os.getenv('BOT_TOKEN')
+from config import BOT_TOKEN
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()

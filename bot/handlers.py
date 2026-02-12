@@ -7,8 +7,7 @@ from datetime import datetime, timedelta, timezone
 import aiohttp
 import os
 
-API_URL = os.getenv('API_URL', 'http://web:8000/api')
-API_KEY = os.getenv('API_KEY', '12345')
+from .config import API_URL, API_KEY, MAX_TAGS_PER_USER, MAX_PENDING_TASKS_PER_USER, MAX_ARCHIVE_TASKS_PER_USER
 
 
 class CreateTaskState(StatesGroup):
@@ -66,8 +65,8 @@ async def cmd_start(message: types.Message):
         "🤖 Бот управления задачами\n\n"
         "➕ Новая задача - создать с уведомлением (1мин, 2мин, 5мин, 10мин, 1час)\n"
         "📋 Мои задачи - активные задачи (макс. 6)\n"
-        "🏷 Теги - управление тегами (макс. 4)\n"
-        "📦 Архив - последние 5 завершённых\n"
+        f"🏷 Теги - управление тегами (макс. {MAX_TAGS_PER_USER})\n"
+        f"📦 Архив - последние {MAX_ARCHIVE_TASKS_PER_USER} завершённых\n"
         "🗑 Удалить задачу\n"
         "➕ Новый тег - быстрое создание",
         reply_markup=get_main_keyboard()
@@ -115,7 +114,7 @@ async def process_notify_time(callback: types.CallbackQuery, state: FSMContext):
     buttons.append([InlineKeyboardButton(text="⏭ Пропустить", callback_data="tags_skip")])
     buttons.append([InlineKeyboardButton(text="✅ Готово", callback_data="tags_done")])
     
-    await callback.message.answer("Выберите теги (макс. 4):", reply_markup=create_keyboard(buttons))
+    await callback.message.answer(f"Выберите теги (макс. {MAX_TAGS_PER_USER}):", reply_markup=create_keyboard(buttons))
     await state.update_data(selected_tags=[])
     await state.set_state(CreateTaskState.tags)
     await callback.answer()
@@ -130,7 +129,7 @@ async def toggle_tag_selection(callback: types.CallbackQuery, state: FSMContext)
         selected.remove(tag_id)
     else:
         if len(selected) >= 4:
-            await callback.answer("Максимум 4 тега!", show_alert=True)
+            await callback.answer(f"Максимум {MAX_TAGS_PER_USER} тега!", show_alert=True)
             return
         selected.append(tag_id)
     
@@ -177,7 +176,7 @@ async def cmd_list_tasks(message: types.Message):
         await message.answer("📋 Нет активных задач", reply_markup=get_main_keyboard())
         return
     
-    text = f"📋 Задачи ({len(tasks)}/6):\n\n"
+    text = f"📋 Задачи ({len(tasks)}/{MAX_PENDING_TASKS_PER_USER}):\n\n"
     for t in tasks:
         tags = f" [{', '.join(t['tags'])}]" if t['tags'] else ""
         due = f"\n  ⏰ {t['due_date']}" if t['due_date'] else ""
@@ -223,7 +222,7 @@ async def cmd_list_tags(message: types.Message):
         await message.answer("🏷 Нет тегов", reply_markup=get_main_keyboard())
         return
     
-    text = f"🏷 Теги ({len(tags)}/4):\n\n" + "\n".join(f"• {t['name']}" for t in tags)
+    text = f"🏷 Теги ({len(tags)}/{MAX_TAGS_PER_USER}):\n\n" + "\n".join(f"• {t['name']}" for t in tags)
     buttons = [
         [InlineKeyboardButton(text="➕ Создать тег", callback_data="create_tag_ask")],
         [InlineKeyboardButton(text="🗑 Удалить тег", callback_data="delete_tag_list")]
@@ -239,7 +238,7 @@ async def cmd_archive(message: types.Message):
         await message.answer("📦 Архив пуст", reply_markup=get_main_keyboard())
         return
     
-    text = "📦 Архив (последние 5):\n\n"
+    text = f"📦 Архив (последние {MAX_ARCHIVE_TASKS_PER_USER}):\n\n"
     for t in tasks:
         status = "✅" if t['status'] == 'completed' else "🗑"
         tags = f" [{', '.join(t['tags'])}]" if t['tags'] else ""
