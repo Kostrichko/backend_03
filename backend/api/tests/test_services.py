@@ -2,9 +2,10 @@
 Service layer tests for UserService, TagService, and TaskService.
 """
 
+from django.test import TestCase
+
 from api.models import Tag, Task, User
 from api.services import TagService, TaskService, UserService
-from django.test import TestCase
 
 
 class UserServiceTest(TestCase):

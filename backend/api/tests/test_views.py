@@ -4,9 +4,10 @@ API endpoint integration tests.
 
 import json
 
-from api.models import Tag, Task, User
 from django.test import Client, TestCase
 from django.urls import reverse
+
+from api.models import Tag, Task, User
 
 
 class APITestMixin:
@@ -20,12 +21,7 @@ class APITestMixin:
 
     def post_json(self, url, data):
         """Helper method to POST JSON data."""
-        return self.client.post(
-            url,
-            json.dumps(data),
-            content_type="application/json",
-            **self.api_key_header
-        )
+        return self.client.post(url, json.dumps(data), content_type="application/json", **self.api_key_header)
 
     def get_json(self, url, params=None):
         """Helper method to GET with query params."""
@@ -78,8 +74,9 @@ class TagViewTest(APITestMixin, TestCase):
         response = self.get_json("/api/tags/", {"telegram_id": self.user.telegram_id})
 
         self.assertEqual(response.status_code, 200)
-        tags = response.json()
-        self.assertEqual(len(tags), 2)
+        data = response.json()
+        self.assertIn("tags", data)
+        self.assertEqual(len(data["tags"]), 2)
 
     def test_delete_tag(self):
         """Test deleting a tag."""
@@ -139,8 +136,9 @@ class TaskViewTest(APITestMixin, TestCase):
         response = self.get_json("/api/tasks/", {"telegram_id": self.user.telegram_id})
 
         self.assertEqual(response.status_code, 200)
-        tasks = response.json()
-        self.assertEqual(len(tasks), 2)
+        data = response.json()
+        self.assertIn("tasks", data)
+        self.assertEqual(len(data["tasks"]), 2)
 
     def test_delete_task(self):
         """Test deleting a task."""
@@ -159,13 +157,12 @@ class TaskViewTest(APITestMixin, TestCase):
         task2 = Task.objects.create(user=self.user, title="Task 2", status="deleted")
         Task.objects.create(user=self.user, title="Task 3", status="pending")
 
-        response = self.get_json(
-            "/api/archive/", {"telegram_id": self.user.telegram_id}
-        )
+        response = self.get_json("/api/archive/", {"telegram_id": self.user.telegram_id})
 
         self.assertEqual(response.status_code, 200)
-        archive = response.json()
-        self.assertEqual(len(archive), 2)
+        data = response.json()
+        self.assertIn("tasks", data)
+        self.assertEqual(len(data["tasks"]), 2)
 
     def test_create_task_validation_error(self):
         """Test task creation with empty title fails."""
@@ -203,9 +200,7 @@ class APIKeyMiddlewareTest(TestCase):
     def test_api_key_required(self):
         """Test that API key is required."""
         data = {"telegram_id": self.user.telegram_id, "name": "work"}
-        response = self.client.post(
-            "/api/tags/create/", json.dumps(data), content_type="application/json"
-        )
+        response = self.client.post("/api/tags/create/", json.dumps(data), content_type="application/json")
 
         self.assertEqual(response.status_code, 401)
 

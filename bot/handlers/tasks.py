@@ -4,6 +4,7 @@ from aiogram import F, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import InlineKeyboardButton
+
 from config import (
     MAX_ARCHIVE_TASKS_PER_USER,
     MAX_PENDING_TASKS_PER_USER,
@@ -49,9 +50,7 @@ async def process_task_title(message: types.Message, state: FSMContext):
 
 async def process_notify_time(callback: types.CallbackQuery, state: FSMContext):
     minutes = int(callback.data.split("_")[1])
-    due_date = (datetime.now(timezone.utc) + timedelta(minutes=minutes)).strftime(
-        "%Y-%m-%d %H:%M:%S"
-    )
+    due_date = (datetime.now(timezone.utc) + timedelta(minutes=minutes)).isoformat()
     await state.update_data(due_date=due_date)
 
     result = await api_client.api_request(
@@ -125,10 +124,9 @@ async def finalize_task_creation(user_id, state: FSMContext, message):
         tags_result = await api_client.api_request(
             "GET", "/tags/", params={"telegram_id": user_id}
         )
+        all_tags = tags_result.get("tags", [])
         tag_names = [
-            t["name"]
-            for t in tags_result.get("tags", [])
-            if str(t["id"]) in [str(tid) for tid in tag_ids]
+            t["name"] for t in all_tags if str(t["id"]) in [str(tid) for tid in tag_ids]
         ]
 
     result = await api_client.api_request(

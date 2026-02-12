@@ -7,12 +7,10 @@ from ..models import Tag, User
 class TagService:
     @staticmethod
     def get_tags_for_user(user: User):
-        """Get all tags for a user"""
         return Tag.objects.filter(user=user).order_by("name")
 
     @staticmethod
     def create_tag(user: User, name: str) -> Tag:
-        """Create a new tag for user"""
         if Tag.objects.filter(user=user).count() >= settings.MAX_TAGS_PER_USER:
             raise ValueError(f"Лимит тегов: {settings.MAX_TAGS_PER_USER}")
 
@@ -27,7 +25,6 @@ class TagService:
 
     @staticmethod
     def delete_tag(user: User, tag_id: int):
-        """Delete a tag by id for user"""
         deleted = Tag.objects.filter(id=tag_id, user=user).delete()
         if deleted[0] == 0:
             raise Tag.DoesNotExist("Tag not found")

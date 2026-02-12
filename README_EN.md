@@ -1,165 +1,260 @@
-# Django Aiogram Task Manager
+# Task Manager — Django + Aiogram
 
-A production-ready task management system combining Django REST API with a Telegram bot interface. Built for efficient task tracking with tag-based organization and intelligent notification scheduling.
+Task management system: Django REST API backend + Telegram bot on aiogram with Celery-based notifications.
 
-## Features
+## Stack
 
-- **Telegram Bot Interface**: Intuitive keyboard-based UI for task management
-- **Smart Notifications**: Precise task reminders using Celery ETA scheduling
-- **Tag System**: Organize tasks with custom tags (up to 4 per user)
-- **Task Limits**: Enforced limits to maintain focus (6 active tasks maximum)
-- **Archive Management**: Separate view for completed and deleted tasks
-- **RESTful API**: Clean JSON endpoints for programmatic access
+| Component | Technology |
+|-----------|-----------|
+| Backend | Django 5.2, DRF |
+| Bot | aiogram 3.4 |
+| Database | PostgreSQL 16 |
+| Task queue | Celery 5.4 + Redis |
+| Containers | Docker Compose |
+| CI | GitHub Actions |
 
-## Tech Stack
+## Quick Start
 
-- **Backend**: Django 5.2.1
-- **Database**: PostgreSQL 16
-- **Bot Framework**: aiogram 3.4.1
-- **Task Queue**: Celery 5.4.0 with Redis broker
-- **Containerization**: Docker Compose
-- **Testing**: Django TestCase (14 comprehensive tests)
-
-## Prerequisites
-
-- Docker and Docker Compose
-- Telegram Bot Token (obtain from [@BotFather](https://t.me/botfather))
-
-## Installation
-
-1. Clone the repository:
 ```bash
 git clone <repository-url>
 cd django_aiogram
 ```
 
-2. Create `.env` file in the project root:
+Create `.env` in the project root:
+
 ```env
-BOT_TOKEN=your_telegram_bot_token_here
+BOT_TOKEN=your_token_from_@BotFather
+API_KEY=any_secret_key
 POSTGRES_DB=django_aiogram
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
 ```
 
-3. Build and start services:
+Run:
+
 ```bash
 docker compose up -d --build
+docker compose exec web python manage.py migrate
 ```
 
-4. Apply database migrations:
-```bash
-docker exec django_aiogram-web-1 python manage.py migrate
+Open your bot in Telegram and send `/start`.
+
+## Architecture
+
+```
+┌──────────────┐     HTTP/JSON      ┌──────────────┐
+│  Telegram    │◄──────────────────►│   aiogram    │
+│  Bot API     │                    │   (bot/)     │
+└──────────────┘                    └──────┬───────┘
+                                           │ aiohttp
+                                           ▼
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│  PostgreSQL  │◄────│    Django    │◄────│    Redis     │
+│              │     │  (backend/) │     │              │
+└──────────────┘     └──────┬───────┘     └──────┬───────┘
+                            │                     │
+                            ▼                     │
+                     ┌──────────────┐             │
+                     │   Celery     │◄────────────┘
+                     │   Worker     │
+                     └──────────────┘
 ```
 
-## Usage
+**5 Docker containers:** postgres, redis, web, bot, celery-worker.
 
-### Telegram Bot
+### Communication
 
-Start a conversation with your bot on Telegram. The main menu provides six operations:
-
-- **➕ Новая задача**: Create a task with optional notification time
-- **📋 Мои задачи**: View all active tasks
-- **🏷 Теги**: List existing tags
-- **📦 Архив**: Browse completed and deleted tasks
-- **🗑 Удалить задачу**: Mark a task as deleted
-- **➕ Новый тег**: Create a new tag
-
-### API Endpoints
-
-All endpoints accept JSON payloads and return JSON responses.
-
-#### Users
-- `POST /api/register/` - Register user by telegram_id
-
-#### Tasks
-- `GET /api/tasks/?telegram_id={id}` - Get active tasks
-- `POST /api/tasks/create/` - Create new task
-- `POST /api/tasks/delete/` - Delete task
-
-#### Tags
-- `GET /api/tags/?telegram_id={id}` - Get user tags
-- `POST /api/tags/create/` - Create new tag
-- `POST /api/tags/delete/` - Delete tag
-
-#### Archive
-- `GET /api/archive/?telegram_id={id}` - Get completed/deleted tasks
-- `POST /api/clear/` - Clear all user tasks and tags
+- Bot communicates with the backend over Docker's internal network via HTTP JSON API
+- Authentication via `X-API-Key` header
+- Backend is the sole database accessor
+- Notifications are scheduled via Celery ETA (no polling)
 
 ## Project Structure
 
 ```
-django_aiogram/
 ├── backend/
-│   ├── config/              # Django settings and configuration
+│   ├── config/                  # Django settings, Celery, URL routing
 │   │   ├── settings.py
-│   │   ├── urls.py
-│   │   └── celery.py
-│   ├── api/                 # Core application
-│   │   ├── models.py        # User, Task, Tag models
-│   │   ├── views.py         # API endpoints
-│   │   ├── tasks.py         # Celery notification tasks
-│   │   └── tests.py         # Test suite
-│   ├── manage.py
-│   └── requirements.txt
+│   │   ├── settings_test.py     # Test settings (SQLite in-memory)
+│   │   ├── celery.py
+│   │   └── urls.py
+│   ├── api/
+│   │   ├── models.py            # User, Task, Tag
+│   │   ├── views.py             # API endpoints
+│   │   ├── serializers.py       # DRF serializers
+│   │   ├── middleware.py        # APIKeyMiddleware
+│   │   ├── tasks.py             # Celery notification task
+│   │   ├── services/            # Service Layer
+│   │   │   ├── user_service.py
+│   │   │   ├── task_service.py
+│   │   │   └── tag_service.py
+│   │   └── tests/               # 54 tests
+│   │       ├── test_models.py
+│   │       ├── test_serializers.py
+│   │       ├── test_services.py
+│   │       └── test_views.py
+│   ├── pyproject.toml           # Black, isort, mypy, coverage
+│   ├── requirements.txt
+│   ├── requirements-dev.txt
+│   └── run_checks.sh
 ├── bot/
-│   ├── main.py              # Bot entry point
-│   └── handlers.py          # Bot command handlers and FSM
-├── docker-compose.yml       # Service orchestration
-├── Dockerfile               # Multi-service container image
-└── .env                     # Environment variables
+│   ├── main.py                  # Entry point
+│   ├── config.py                # Bot settings
+│   ├── handlers/                # Modular handlers
+│   │   ├── __init__.py          # register_handlers()
+│   │   ├── common.py            # /start, keyboard
+│   │   ├── tasks.py             # Task CRUD, FSM
+│   │   └── tags.py              # Tag CRUD, FSM
+│   ├── services/
+│   │   └── api_client.py        # HTTP client to backend
+│   ├── tests/                   # 5 tests
+│   │   ├── conftest.py
+│   │   ├── test_api_client.py
+│   │   └── test_handlers.py
+│   ├── requirements.txt
+│   ├── requirements-dev.txt
+│   ├── pytest.ini
+│   └── run_checks.sh
+├── docker-compose.yml
+├── Dockerfile
+└── .env
 ```
 
-## Architecture
+## API
 
-### Task Notification System
+All endpoints require `X-API-Key` header. Prefix: `/api/`.
 
-Tasks with due dates trigger Celery tasks scheduled with ETA (Estimated Time of Arrival). When the scheduled time arrives, the bot sends a notification to the user via Telegram. No polling or periodic checking is required.
+### Endpoints
 
-### Database Schema
+| Method | URL | Description | Body / Params | Response |
+|--------|-----|-------------|---------------|----------|
+| POST | `/register/` | Register user | `{telegram_id, username}` | `{telegram_id, username}` |
+| GET | `/tasks/` | Active tasks | `?telegram_id=` | `{"tasks": [...]}` |
+| POST | `/tasks/create/` | Create task | `{telegram_id, title, due_date?, tags?}` | `{id, title, status, ...}` |
+| POST | `/tasks/delete/` | Delete task | `{telegram_id, task_id}` | `{"status": "ok"}` |
+| GET | `/tags/` | User tags | `?telegram_id=` | `{"tags": [...]}` |
+| POST | `/tags/create/` | Create tag | `{telegram_id, name}` | `{id, name}` |
+| POST | `/tags/delete/` | Delete tag | `{telegram_id, tag_id}` | `{"status": "ok"}` |
+| GET | `/archive/` | Archived tasks | `?telegram_id=` | `{"tasks": [...]}` |
+| POST | `/clear/` | Clear all data | `{telegram_id}` | `{"status": "ok"}` |
 
-- **User**: `telegram_id` (PK), `username`
-- **Tag**: `name`, `user` (FK), unique constraint on `(user, name)`
-- **Task**: `title`, `status`, `due_date`, `user` (FK), many-to-many with Tags
+### Error Format
+
+```json
+{"error": "error description"}
+```
+
+Status codes: `400` — validation, `401` — invalid API key, `404` — not found, `500` — server error.
+
+## Data Models
+
+```
+User (PK: telegram_id)
+ ├── Tag (name, unique per user)
+ └── Task (title, status, due_date?, created_at)
+      └── tags (M2M → Tag)
+```
+
+**Task statuses:** `pending` → `completed` | `deleted`
+
+## Limits
+
+| Parameter | Value | Setting |
+|-----------|-------|---------|
+| Active tasks | 6 | `MAX_PENDING_TASKS_PER_USER` |
+| Tags | 4 | `MAX_TAGS_PER_USER` |
+| Archive tasks (displayed) | 5 | `MAX_ARCHIVE_TASKS_PER_USER` |
+
+Configured in `backend/config/settings.py` and mirrored in `bot/config.py`.
+
+## Telegram Bot
+
+### Commands and Buttons
+
+| Command / Button | Action |
+|------------------|--------|
+| `/start` | Registration, main menu |
+| ➕ Новая задача | Create task (FSM: title → time → tags) |
+| 📋 Мои задачи | List active tasks |
+| 🏷 Теги | Tag management |
+| 📦 Архив | Completed and deleted tasks |
+| 🗑 Удалить задачу | Select task to delete |
+| ➕ Новый тег | Create a tag |
 
 ### FSM States
 
-The bot uses Finite State Machines for multi-step operations:
-- `CreateTaskState`: title → notification_time → tags
-- `CreateTagState`: name input
+**CreateTaskState:** `title` → `notify_time` → `tags`
+- Notification time: 1 min, 2 min, 5 min, 10 min, 1 hour
+- Tags: select from existing via inline buttons, can be skipped
+
+**CreateTagState:** `name`
+
+## Notifications
+
+When a task with `due_date` is created, the backend schedules a Celery task with `eta=due_date`. At the scheduled time, the worker sends a message via Telegram Bot API. No polling — the task fires exactly once at the right moment.
 
 ## Testing
 
-Run the test suite:
+### Backend — 54 tests
 
 ```bash
-docker exec django_aiogram-web-1 python manage.py test api --verbosity=2
+# Locally (Python 3.11+)
+cd backend
+pip install -r requirements.txt -r requirements-dev.txt
+python manage.py test --settings=config.settings_test
+
+# Via Docker
+docker compose exec web python manage.py test --settings=config.settings_test
 ```
 
-Test coverage includes:
-- Tag operations (create, duplicate check, limits, retrieval, deletion)
-- Task operations (create, limits, retrieval, deletion, archiving)
-- Notification scheduling (with/without due dates)
+Test settings: SQLite in-memory, DummyCache, rate limiting disabled.
 
-## Development
+- **test_models.py** — model creation, relations, ordering
+- **test_serializers.py** — validation of all serializers
+- **test_services.py** — business logic (limits, duplicates, CRUD)
+- **test_views.py** — endpoint integration tests + APIKeyMiddleware
 
-### Services
+### Bot — 5 tests
 
-The application runs as five Docker containers:
+```bash
+cd bot
+pip install -r requirements.txt -r requirements-dev.txt
+pytest -W ignore::DeprecationWarning tests/
+```
 
-- `postgres`: PostgreSQL database with health checks
-- `redis`: Celery message broker
-- `web`: Django application server
-- `celery-worker`: Asynchronous task processor
-- `bot`: Telegram bot polling service
+- **test_api_client.py** — successful request, HTTP error handling
+- **test_handlers.py** — `/start`, task list (empty and with data)
 
-### Key Design Decisions
+### Linting
 
-1. **Telegram ID as Primary Key**: Eliminates need for custom user IDs
-2. **Plain Status Strings**: Simple 'pending', 'completed', 'deleted' states
-3. **ETA-based Scheduling**: Precise notifications without beat scheduler
-4. **Single Environment File**: Centralized configuration management
-5. **Keyboard UI**: Persistent menu for improved user experience
+```bash
+cd backend && ./run_checks.sh    # tests + black + isort + flake8 + mypy
+cd bot && ./run_checks.sh        # tests + black + isort + flake8
+```
 
-## License
+## CI/CD
 
-This project is provided as-is for educational and personal use.
+GitHub Actions (`.github/workflows/ci.yml`) — 3 parallel jobs:
+
+| Job | What it checks |
+|-----|----------------|
+| `backend-test` | Django tests (SQLite) |
+| `bot-test` | Bot pytest suite |
+| `lint` | Black, isort, flake8, mypy (backend) |
+
+Triggers: push and PR to `main` and `dev` branches.
+
+## Key Design Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| `telegram_id` as PK | Unique, immutable, direct bot↔API mapping |
+| Service Layer | Business logic separated from views, easy to test |
+| Celery ETA over beat | Precise notifications without periodic DB polling |
+| Wrapped JSON responses | `{"tasks": [...]}` instead of bare arrays — extensibility, consistency |
+| ReplyKeyboard | Always-visible menu, fewer input errors |
+| FSM for dialogs | Clear structure, per-step validation |
+| APIKeyMiddleware | Single-layer protection for all endpoints |
+| Rate limiting | django-ratelimit on every endpoint |

@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import aiohttp
 import pytest
+
 from config import API_KEY, API_URL
 from services.api_client import api_request
 
@@ -31,6 +32,7 @@ async def test_api_request_error(mocker):
     # Arrange
     mock_response = AsyncMock()
     mock_response.status = 400
+    mock_response.json = AsyncMock(return_value={"error": "Bad request"})
 
     mock_ctx = MagicMock()
     mock_ctx.__aenter__.return_value = mock_response
@@ -42,4 +44,4 @@ async def test_api_request_error(mocker):
 
     # Assert
     assert "error" in result
-    assert "HTTP 400" in result["error"]
+    assert result["error"] == "Bad request"

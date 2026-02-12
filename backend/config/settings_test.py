@@ -36,15 +36,6 @@ SILENCED_SYSTEM_CHECKS = ["django_ratelimit.E003", "django_ratelimit.W001"]
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
 
-# Disable migrations for faster tests (optional)
-# Uncomment if you want to use --keepdb flag
-# class DisableMigrations:
-#     def __contains__(self, item):
-#         return True
-#     def __getitem__(self, item):
-#         return None
-# MIGRATION_MODULES = DisableMigrations()
-
 # Test runner configuration
 TEST_RUNNER = "django.test.runner.DiscoverRunner"
 

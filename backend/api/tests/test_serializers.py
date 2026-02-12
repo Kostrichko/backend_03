@@ -2,6 +2,8 @@
 Serializer validation tests.
 """
 
+from django.test import TestCase
+
 from api.models import Tag, Task, User
 from api.serializers import (
     ClearAllSerializer,
@@ -12,9 +14,7 @@ from api.serializers import (
     TaskActionSerializer,
     TaskCreateSerializer,
     TaskSerializer,
-    UserSerializer,
-)
-from django.test import TestCase
+    UserSerializer,)
 
 
 class UserSerializerTest(TestCase):
@@ -122,8 +122,8 @@ class TaskCreateSerializerTest(TestCase):
         data = {
             "telegram_id": 123456789,
             "title": "Test task",
-            "tags": ["work", "urgent"],
-        }
+            "tags": ["work", "urgent"]}
+        
         serializer = TaskCreateSerializer(data=data)
 
         self.assertTrue(serializer.is_valid())

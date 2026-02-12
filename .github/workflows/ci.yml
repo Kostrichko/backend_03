@@ -21,7 +21,7 @@ jobs:
       working-directory: ./backend
       run: |
         pip install -r requirements.txt
-        pip install -r ../requirements-dev.txt
+        pip install -r requirements-dev.txt
     - name: Run backend tests
       working-directory: ./backend
       run: |
@@ -40,7 +40,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -r bot/requirements.txt
-        pip install -r requirements-dev.txt
+        pip install -r backend/requirements-dev.txt
     - name: Run bot tests
       working-directory: ./bot
       run: |
@@ -59,7 +59,7 @@ jobs:
       run: |
         pip install -r backend/requirements.txt
         pip install -r bot/requirements.txt
-        pip install -r requirements-dev.txt
+        pip install -r backend/requirements-dev.txt
         pip install flake8 black isort mypy django-stubs djangorestframework-stubs types-requests
     - name: Run Black
       run: black --check . --exclude="migrations|venv|env|.venv"
