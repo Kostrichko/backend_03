@@ -1,12 +1,13 @@
-from ..models import Tag, User
 from django.db import transaction
+
+from ..models import Tag, User
 
 
 class TagService:
     @staticmethod
     def get_tags_for_user(user: User):
         """Get all tags for a user"""
-        return Tag.objects.filter(user=user).order_by('name')
+        return Tag.objects.filter(user=user).order_by("name")
 
     @staticmethod
     def create_tag(user: User, name: str) -> Tag:
