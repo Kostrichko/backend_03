@@ -17,11 +17,11 @@ class TaskService:
         return (
             Task.objects.filter(user=user, status__in=["completed", "deleted"])
             .prefetch_related("tags")
-            .order_by("-created_at")[:settings.MAX_ARCHIVE_TASKS_PER_USER]
+            .order_by("-created_at")[: settings.MAX_ARCHIVE_TASKS_PER_USER]
         )
 
     @staticmethod
-    def create_task(user: User, title: str, due_date_str: str = None, tag_names: list = None) -> Task:
+    def create_task(user: User, title: str, due_date_str: str | None = None, tag_names: list[str] | None = None) -> Task:
         """Create a new task for user"""
         if Task.objects.filter(user=user, status="pending").count() >= settings.MAX_PENDING_TASKS_PER_USER:
             raise ValueError(f"Лимит задач: {settings.MAX_PENDING_TASKS_PER_USER}")

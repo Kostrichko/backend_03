@@ -48,3 +48,9 @@ jobs:
       run: |
         pip install isort
         isort --check-only .
+
+    - name: Type check with mypy
+      working-directory: ./backend
+      run: |
+        pip install mypy django-stubs djangorestframework-stubs types-requests
+        mypy .
