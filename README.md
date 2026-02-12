@@ -95,7 +95,7 @@ docker compose exec web python manage.py migrate
 │   │       ├── test_serializers.py
 │   │       ├── test_services.py
 │   │       └── test_views.py
-│   ├── pyproject.toml           # Black, isort, mypy, coverage
+│   ├── pyproject.toml           # Black, mypy, coverage
 │   ├── requirements.txt
 │   ├── requirements-dev.txt
 │   └── run_checks.sh
@@ -230,8 +230,8 @@ pytest -W ignore::DeprecationWarning tests/
 ### Линтинг
 
 ```bash
-cd backend && ./run_checks.sh    # tests + black + isort + flake8 + mypy
-cd bot && ./run_checks.sh        # tests + black + isort + flake8
+cd backend && ./run_checks.sh    # tests + black + flake8 + mypy
+cd bot && ./run_checks.sh        # tests + black + flake8
 ```
 
 ## CI/CD
@@ -242,7 +242,7 @@ GitHub Actions (`.github/workflows/ci.yml`) — 3 параллельных job'�
 |-----|---------------|
 | `backend-test` | Django-тесты (SQLite) |
 | `bot-test` | pytest бота |
-| `lint` | Black, isort, flake8, mypy (backend) |
+| `lint` | Black, flake8, mypy (backend) |
 
 Триггеры: push и PR в ветки `main` и `dev`.
 

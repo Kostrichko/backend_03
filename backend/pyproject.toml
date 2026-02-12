@@ -13,14 +13,6 @@ exclude = '''
 )/
 '''
 
-[tool.isort]
-profile = "black"
-line_length = 127
-skip = ["migrations", "venv", ".venv", "env"]
-known_first_party = ["api", "config"]
-known_django = ["django"]
-sections = ["FUTURE", "STDLIB", "DJANGO", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
-
 [tool.coverage.run]
 source = ["api"]
 omit = [
