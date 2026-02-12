@@ -8,27 +8,39 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0003_remove_task_tags_remove_task_created_at_and_more'),
+        ("api", "0003_remove_task_tags_remove_task_created_at_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='task',
-            name='created_at',
-            field=models.DateTimeField(auto_now_add=True, default=django.utils.timezone.now),
+            model_name="task",
+            name="created_at",
+            field=models.DateTimeField(
+                auto_now_add=True, default=django.utils.timezone.now
+            ),
             preserve_default=False,
         ),
         migrations.CreateModel(
-            name='Tag',
+            name="Tag",
             fields=[
-                ('id', models.CharField(editable=False, max_length=30, primary_key=True, serialize=False)),
-                ('name', models.CharField(max_length=50)),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='api.user')),
+                (
+                    "id",
+                    models.CharField(
+                        editable=False, max_length=30, primary_key=True, serialize=False
+                    ),
+                ),
+                ("name", models.CharField(max_length=50)),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="api.user"
+                    ),
+                ),
             ],
         ),
         migrations.AddField(
-            model_name='task',
-            name='tags',
-            field=models.ManyToManyField(blank=True, to='api.tag'),
+            model_name="task",
+            name="tags",
+            field=models.ManyToManyField(blank=True, to="api.tag"),
         ),
     ]

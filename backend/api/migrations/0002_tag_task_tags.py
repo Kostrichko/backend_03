@@ -7,22 +7,32 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0001_initial'),
+        ("api", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Tag',
+            name="Tag",
             fields=[
-                ('id', models.CharField(editable=False, max_length=30, primary_key=True, serialize=False)),
-                ('name', models.CharField(max_length=50)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='api.user')),
+                (
+                    "id",
+                    models.CharField(
+                        editable=False, max_length=30, primary_key=True, serialize=False
+                    ),
+                ),
+                ("name", models.CharField(max_length=50)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="api.user"
+                    ),
+                ),
             ],
         ),
         migrations.AddField(
-            model_name='task',
-            name='tags',
-            field=models.ManyToManyField(blank=True, to='api.tag'),
+            model_name="task",
+            name="tags",
+            field=models.ManyToManyField(blank=True, to="api.tag"),
         ),
     ]

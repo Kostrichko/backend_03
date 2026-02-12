@@ -6,31 +6,31 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0002_tag_task_tags'),
+        ("api", "0002_tag_task_tags"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='task',
-            name='tags',
+            model_name="task",
+            name="tags",
         ),
         migrations.RemoveField(
-            model_name='task',
-            name='created_at',
+            model_name="task",
+            name="created_at",
         ),
         migrations.RemoveField(
-            model_name='task',
-            name='due_date',
+            model_name="task",
+            name="due_date",
         ),
         migrations.RemoveField(
-            model_name='task',
-            name='notified',
+            model_name="task",
+            name="notified",
         ),
         migrations.RemoveField(
-            model_name='user',
-            name='created_at',
+            model_name="user",
+            name="created_at",
         ),
         migrations.DeleteModel(
-            name='Tag',
+            name="Tag",
         ),
     ]

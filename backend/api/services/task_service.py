@@ -21,7 +21,12 @@ class TaskService:
         )
 
     @staticmethod
-    def create_task(user: User, title: str, due_date_str: str | None = None, tag_names: list[str] | None = None) -> Task:
+    def create_task(
+        user: User,
+        title: str,
+        due_date_str: str | None = None,
+        tag_names: list[str] | None = None,
+    ) -> Task:
         """Create a new task for user"""
         if Task.objects.filter(user=user, status="pending").count() >= settings.MAX_PENDING_TASKS_PER_USER:
             raise ValueError(f"Лимит задач: {settings.MAX_PENDING_TASKS_PER_USER}")

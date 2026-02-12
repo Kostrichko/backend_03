@@ -113,7 +113,11 @@ class TaskViewTest(APITestMixin, TestCase):
         """Test creating a task with tags."""
         Tag.objects.create(user=self.user, name="work")
 
-        data = {"telegram_id": self.user.telegram_id, "title": "Task with tags", "tags": ["work"]}
+        data = {
+            "telegram_id": self.user.telegram_id,
+            "title": "Task with tags",
+            "tags": ["work"],
+        }
         response = self.post_json("/api/tasks/create/", data)
 
         self.assertEqual(response.status_code, 200)
@@ -201,7 +205,10 @@ class APIKeyMiddlewareTest(TestCase):
         """Test that valid API key allows access."""
         data = {"telegram_id": self.user.telegram_id, "name": "work"}
         response = self.client.post(
-            "/api/tags/create/", json.dumps(data), content_type="application/json", HTTP_X_API_KEY="test-api-key"
+            "/api/tags/create/",
+            json.dumps(data),
+            content_type="application/json",
+            HTTP_X_API_KEY="test-api-key",
         )
 
         self.assertEqual(response.status_code, 200)

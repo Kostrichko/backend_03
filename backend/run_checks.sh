@@ -17,6 +17,7 @@ isort --check-only . --skip migrations --skip venv --skip env --skip .venv
 flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 
 echo "Type checking..."
+export PYTHONPATH=$PWD
 mypy .
 
 echo "Done."

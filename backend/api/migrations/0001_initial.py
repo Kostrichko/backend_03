@@ -8,27 +8,41 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='User',
+            name="User",
             fields=[
-                ('telegram_id', models.BigIntegerField(primary_key=True, serialize=False, unique=True)),
-                ('username', models.CharField(blank=True, max_length=100)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                (
+                    "telegram_id",
+                    models.BigIntegerField(
+                        primary_key=True, serialize=False, unique=True
+                    ),
+                ),
+                ("username", models.CharField(blank=True, max_length=100)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
         ),
         migrations.CreateModel(
-            name='Task',
+            name="Task",
             fields=[
-                ('id', models.CharField(editable=False, max_length=30, primary_key=True, serialize=False)),
-                ('title', models.CharField(max_length=200)),
-                ('due_date', models.DateTimeField(blank=True, null=True)),
-                ('notified', models.BooleanField(default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='api.user')),
+                (
+                    "id",
+                    models.CharField(
+                        editable=False, max_length=30, primary_key=True, serialize=False
+                    ),
+                ),
+                ("title", models.CharField(max_length=200)),
+                ("due_date", models.DateTimeField(blank=True, null=True)),
+                ("notified", models.BooleanField(default=False)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="api.user"
+                    ),
+                ),
             ],
         ),
     ]
