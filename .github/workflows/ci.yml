@@ -60,7 +60,7 @@ jobs:
         pip install -r backend/requirements.txt
         pip install -r bot/requirements.txt
         pip install -r requirements-dev.txt
-        pip install flake8 black isort django-stubs djangorestframework-stubs types-requests
+        pip install flake8 black isort mypy django-stubs djangorestframework-stubs types-requests
     - name: Run Black
       run: black --check . --exclude="migrations|venv|env|.venv"
     - name: Run isort
