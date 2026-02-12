@@ -16,7 +16,9 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class TaskSerializer(serializers.ModelSerializer):
-    tags = serializers.SlugRelatedField(many=True, slug_field="name", queryset=Tag.objects.all(), required=False)
+    tags = serializers.SlugRelatedField(
+        many=True, slug_field="name", queryset=Tag.objects.all(), required=False
+    )
 
     class Meta:
         model = Task
@@ -28,7 +30,9 @@ class TaskSerializer(serializers.ModelSerializer):
         task = Task.objects.create(**validated_data)
 
         if tags_data:
-            tags = Tag.objects.filter(user=validated_data["user"], name__in=[tag.name for tag in tags_data])
+            tags = Tag.objects.filter(
+                user=validated_data["user"], name__in=[tag.name for tag in tags_data]
+            )
             task.tags.set(tags)
 
         return task
@@ -38,7 +42,9 @@ class TaskCreateSerializer(serializers.Serializer):
     telegram_id = serializers.IntegerField()
     title = serializers.CharField(max_length=200)
     due_date = serializers.DateTimeField(required=False, allow_null=True)
-    tags = serializers.ListField(child=serializers.CharField(max_length=50), required=False, default=[])
+    tags = serializers.ListField(
+        child=serializers.CharField(max_length=50), required=False, default=[]
+    )
 
     def validate_title(self, value):
         if not value.strip():

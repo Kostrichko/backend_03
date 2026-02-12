@@ -2,7 +2,6 @@ from unittest.mock import AsyncMock, MagicMock
 
 import aiohttp
 import pytest
-
 from config import API_KEY, API_URL
 from services.api_client import api_request
 

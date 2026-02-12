@@ -9,7 +9,11 @@ class TaskService:
     @staticmethod
     def get_pending_tasks_for_user(user: User):
         """Get pending tasks for user with tags"""
-        return Task.objects.filter(user=user, status="pending").prefetch_related("tags").order_by("due_date", "-created_at")
+        return (
+            Task.objects.filter(user=user, status="pending")
+            .prefetch_related("tags")
+            .order_by("due_date", "-created_at")
+        )
 
     @staticmethod
     def get_archive_tasks_for_user(user: User):
@@ -28,7 +32,10 @@ class TaskService:
         tag_names: list[str] | None = None,
     ) -> Task:
         """Create a new task for user"""
-        if Task.objects.filter(user=user, status="pending").count() >= settings.MAX_PENDING_TASKS_PER_USER:
+        if (
+            Task.objects.filter(user=user, status="pending").count()
+            >= settings.MAX_PENDING_TASKS_PER_USER
+        ):
             raise ValueError(f"Лимит задач: {settings.MAX_PENDING_TASKS_PER_USER}")
 
         # Validation moved to serializer

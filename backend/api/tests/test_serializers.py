@@ -2,8 +2,6 @@
 Serializer validation tests.
 """
 
-from django.test import TestCase
-
 from api.models import Tag, Task, User
 from api.serializers import (
     ClearAllSerializer,
@@ -16,6 +14,7 @@ from api.serializers import (
     TaskSerializer,
     UserSerializer,
 )
+from django.test import TestCase
 
 
 class UserSerializerTest(TestCase):

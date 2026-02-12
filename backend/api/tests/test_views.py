@@ -4,10 +4,9 @@ API endpoint integration tests.
 
 import json
 
+from api.models import Tag, Task, User
 from django.test import Client, TestCase
 from django.urls import reverse
-
-from api.models import Tag, Task, User
 
 
 class APITestMixin:
@@ -21,7 +20,12 @@ class APITestMixin:
 
     def post_json(self, url, data):
         """Helper method to POST JSON data."""
-        return self.client.post(url, json.dumps(data), content_type="application/json", **self.api_key_header)
+        return self.client.post(
+            url,
+            json.dumps(data),
+            content_type="application/json",
+            **self.api_key_header
+        )
 
     def get_json(self, url, params=None):
         """Helper method to GET with query params."""
@@ -155,7 +159,9 @@ class TaskViewTest(APITestMixin, TestCase):
         task2 = Task.objects.create(user=self.user, title="Task 2", status="deleted")
         Task.objects.create(user=self.user, title="Task 3", status="pending")
 
-        response = self.get_json("/api/archive/", {"telegram_id": self.user.telegram_id})
+        response = self.get_json(
+            "/api/archive/", {"telegram_id": self.user.telegram_id}
+        )
 
         self.assertEqual(response.status_code, 200)
         archive = response.json()
@@ -197,7 +203,9 @@ class APIKeyMiddlewareTest(TestCase):
     def test_api_key_required(self):
         """Test that API key is required."""
         data = {"telegram_id": self.user.telegram_id, "name": "work"}
-        response = self.client.post("/api/tags/create/", json.dumps(data), content_type="application/json")
+        response = self.client.post(
+            "/api/tags/create/", json.dumps(data), content_type="application/json"
+        )
 
         self.assertEqual(response.status_code, 401)
 

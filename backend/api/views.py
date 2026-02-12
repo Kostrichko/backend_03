@@ -5,7 +5,6 @@ from django.db import transaction
 from django.http import JsonResponse
 from django.utils.dateparse import parse_datetime
 from django.views.decorators.csrf import csrf_exempt
-
 from django_ratelimit.decorators import ratelimit
 from rest_framework.exceptions import ValidationError as DRFValidationError
 

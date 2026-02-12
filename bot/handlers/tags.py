@@ -2,7 +2,6 @@ from aiogram import F, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import InlineKeyboardButton
-
 from config import MAX_TAGS_PER_USER
 from handlers.common import create_keyboard, get_main_keyboard
 from services import api_client

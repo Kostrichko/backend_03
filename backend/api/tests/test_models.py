@@ -4,10 +4,9 @@ Model tests for User, Task, and Tag models.
 
 from datetime import timedelta
 
+from api.models import Tag, Task, User
 from django.test import TestCase
 from django.utils import timezone
-
-from api.models import Tag, Task, User
 
 
 class UserModelTest(TestCase):

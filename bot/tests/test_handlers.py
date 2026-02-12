@@ -2,7 +2,6 @@ from unittest.mock import ANY, AsyncMock, MagicMock
 
 import pytest
 from aiogram.types import Chat, Message, User
-
 from config import (
     MAX_ARCHIVE_TASKS_PER_USER,
     MAX_PENDING_TASKS_PER_USER,
