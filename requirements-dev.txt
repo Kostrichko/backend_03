@@ -1,5 +1,7 @@
 pytest
 pytest-django
+pytest-asyncio
+pytest-mock
 coverage
 requests-mock
 freezegun
